@@ -1,25 +1,35 @@
-# Instructions for candidates
+# Tom Brown - Coding Challenge Solution
 
-This is the Java version of the Payment Gateway challenge. If you haven't already read this [README.md](https://github.com/cko-recruitment/) on the details of this exercise, please do so now.
+This is Tom Brown's solution to the Checkout.com coding challenge.
 
 ## Requirements
 - JDK 17
 - Docker
 
-## Template structure
+## Running the application
 
-src/ - A skeleton SpringBoot Application
+* Run the simulator: `docker-compose up -d`
+* Run the tests `./gradlew clean test`
+* Run the application `./gradlew bootRun`
+* Swagger is available on `http://localhost:8090/swagger-ui/index.html`
 
-test/ - Some simple JUnit tests
+## Design Decisions
+* Supported currencies are: `GBP, USD, EUR`.
+* Amounts are positive integers specified in minor units.
+* A card remains valid until the end of its expiry month.
+* Invalid requests are rejected before the acquiring bank is called.
+* Rejected requests do not persist payments.
+* Authorized and Declined requests are persisted and retrievable.
+* Acquiring-bank technical failures are not persisted as completed payments.
+* Automatic retries are not supported because safely retrying a payment requires an idempotency mechanism and defined retry semantics with the acquiring bank.
+* Full card numbers and CVVs are not persisted, only the last 4 digits of the card are persisted.
+* A ConcurrentHashMap is used for in-memory storage, this is to ensure that put / get operations are thread-safe
+* For storing payments we use putIfAbsent, this is to ensure that a duplicate payment ID will not overwrite an existing payment and get payment will return a consistent value.
+* Storage for this implementation is deliberately in-memory
 
-imposters/ - contains the bank simulator configuration. Don't change this
-
-.editorconfig - don't change this. It ensures a consistent set of rules for submissions when reformatting code
-
-docker-compose.yml - configures the bank simulator
-
-
-## API Documentation
-For documentation openAPI is included, and it can be found under the following url: **http://localhost:8090/swagger-ui/index.html**
-
-**Feel free to change the structure of the solution, use a different library etc.**
+## Production Considerations
+* A production system would contain the following -
+  * Durable storage and sensible database isolation levels.
+  * Exporting metrics for observability purposes.
+  * Stable idempotency keys stored using a unique database constraint.
+  * Payment reconciliation jobs
